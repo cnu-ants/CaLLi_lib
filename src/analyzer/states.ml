@@ -21,6 +21,7 @@ module type S =
     val pp_ctxtMem : Format.formatter -> memty CtxtM.t -> unit
     val pp : Format.formatter -> t -> unit
     val iter : (Basicblock.t -> memty CtxtM.t -> unit) -> t -> unit
+    val fold' : (ctxtty -> memty -> 'a -> 'a) -> memty CtxtM.t -> 'a -> 'a
 
   end
   
@@ -49,6 +50,8 @@ module Make (Ctxt : Context.S) (AbsMem : AbstractMemory.S) : (S with type ctxtty
     let empty = M.empty
     let iter = M.iter
 
+    let fold' = CtxtM.fold
+
     let mem (bb_ctxt : Basicblock.t * Ctxt.t) s =
       let (bb, ctxt) = bb_ctxt in
       if M.mem bb s
@@ -60,7 +63,6 @@ module Make (Ctxt : Context.S) (AbsMem : AbstractMemory.S) : (S with type ctxtty
     let find_mem (bb_ctxt : Basicblock.t * Ctxt.t) s = 
       let (bb, ctxt) = bb_ctxt in 
       try CtxtM.find ctxt (M.find bb s) with Not_found -> raise No_state
-
     
     let update (bb_ctxt : Basicblock.t * Ctxt.t) m s =
       let (bb, ctxt) = bb_ctxt in

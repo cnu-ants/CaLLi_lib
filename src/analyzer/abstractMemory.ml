@@ -10,9 +10,12 @@ module type S =
 
     val empty : t
     val bot : t
-    val find_opt : string * int * int -> t -> valty option
+    (* val find_opt : string * int * int -> t -> valty option
     val find : string * int * int -> t -> valty
-    val update : string * int * int -> valty -> t -> t
+    val update : string * int * int -> valty -> t -> t *)
+      val find_opt : string -> t -> valty option
+    val find : string -> t -> valty
+    val update : string -> valty -> t -> t
     val (<=) : t -> t -> bool
     val join : t -> t -> t
     val meet : t -> t -> t
@@ -36,7 +39,8 @@ uniqueness in memory addresses.
 module Make(AbsVal : AbstractDomain.S) : (S with type valty = AbsVal.t) = 
   struct
     
-    type key = string * int * int
+    (* type key = string * int * int *)
+    type key = string
     module M = Map.Make 
     (struct 
       type t = key 
@@ -58,8 +62,8 @@ module Make(AbsVal : AbstractDomain.S) : (S with type valty = AbsVal.t) =
       match mem with
       | Mem mem ->
         (try M.find x mem
-        with _ -> AbsVal.bot)
-      | MemBot -> AbsVal.bot
+        with _ -> AbsVal.bot "")
+      | MemBot -> AbsVal.bot ""
 
     let rec update x (v: AbsVal.t) mem = 
       match mem with 
@@ -99,5 +103,5 @@ module Make(AbsVal : AbstractDomain.S) : (S with type valty = AbsVal.t) =
       | MemBot -> Format.fprintf fmt "bot\n"
       | Mem mem ->
         F.fprintf fmt "[%a]\n" (F.pp_print_list ~pp_sep:(fun fmt () -> F.fprintf fmt "\n")
-          (fun fmt ((s, i1, i2), v) -> F.fprintf fmt " %s#%d#%d ↦ %a" s i1 i2 AbsVal.pp v)) (M.bindings mem)
+          (fun fmt ((s), v) -> F.fprintf fmt " %s ↦ %a" s AbsVal.pp v)) (M.bindings mem)
   end

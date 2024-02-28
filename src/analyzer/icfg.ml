@@ -1,9 +1,3 @@
-module type S =
-  sig
-    type t 
-    val pp : Format.formatter -> t -> unit
-  end
-
 module Make (AbsMem : AbstractMemory.S ) ( Ctxt : Context.S with type memty = AbsMem.t) =
   struct
 
@@ -14,6 +8,7 @@ module Make (AbsMem : AbstractMemory.S ) ( Ctxt : Context.S with type memty = Ab
     let empty = M.empty
     let add = M.add
     let iter = M.iter
+    let fold = M.fold
     
     let make (m : Function.t Module.M.t) : t =
       let icfg = Module.fold 
@@ -64,6 +59,9 @@ module Make (AbsMem : AbstractMemory.S ) ( Ctxt : Context.S with type memty = Ab
       let next_bb_list = Cfg.next bb cfg in 
       Ctxt.apply bb next_bb_list ctxt mem
 
+
+    let succ (bb : Basicblock.t) icfg =
+      M.find bb.bb_name icfg |> List.map (fun b -> Bbpool.find b !Bbpool.pool)
 
     let next (bb : Basicblock.t) (ctxt : Ctxt.t) (mem : AbsMem.t) icfg m : (Basicblock.t * Ctxt.t) list =
       (* let bb_list = M.find bb.bb_name icfg |> 

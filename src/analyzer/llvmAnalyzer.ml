@@ -90,15 +90,24 @@ module Make
         if States.mem bb_ctxt states then
           let prev_mem = States.find_mem bb_ctxt states in
           begin
+            let _ = Format.printf "widen test\n" in
+            (* let _ = Format.printf "%a\n" AbsMem.pp prev_mem in
+            let _ = Format.printf "%a\n" AbsMem.pp memory in *)
             if AbsMem.(memory <= prev_mem) then
+              let _ = Format.printf "stable\n" in
               update t wl states
             else
               let joined_mem = AbsMem.(join prev_mem memory) in
               let _ = LoopCounter.update bb_ctxt in
+              (* let _ = Format.printf "%d\n" (LoopCounter.find bb_ctxt !LoopCounter.lc) in *)
               let widen_mem = 
-                if LoopCounter.widen bb_ctxt 
-                  then AbsMem.widen prev_mem memory
-                  else joined_mem 
+                if LoopCounter.widen bb_ctxt
+                  then 
+                    (* let _ = Format.printf "widen" in *)
+                    AbsMem.widen prev_mem memory
+                  else 
+                    (* let _ = Format.printf "join\n" in *)
+                    joined_mem 
               in
               update t (Worklist.add bb_ctxt wl) (States.update bb_ctxt widen_mem states)
           end
@@ -125,10 +134,17 @@ module Make
     analyze' init_wl states)
 
     (** initilizing llmodule and icfg. must be called before ```analyze``` function called *)
-    let init llm = 
-      let _ = llmodule := llm in
-      let _ = icfg := Icfg.make llm in
-      ()
+    let init (llm : Module.t) = 
+      let _ = llmodule := llm.function_map in
+      let _ = icfg := Icfg.make llm.function_map in
+
+      let mem = 
+        List.fold_left
+        (fun mem (v : Global.t) ->
+          TF.abs_interp_global v mem
+        )
+        AbsMem.empty llm.globals in
+      mem
 
       
  end

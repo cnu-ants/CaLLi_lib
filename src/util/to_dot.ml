@@ -19,7 +19,9 @@ let bb_to_node (bb : Basicblock.t): Dot.Node_Stmt.t =
   let shape : Dot.Attr.t = Shape (Record) in
   let style : Dot.Attr.t = Style (Filled) in
   let color : Dot.Attr.t = FillColor (Lavenderblush) in
-  let tooltip : Dot.Attr.t = ToolTip (Format.asprintf "%a" Summary.pp_ctxtMem (Summary.find bb !summary)) in
+  (* let tooltip : Dot.Attr.t = ToolTip (Format.asprintf "%a" Summary.pp_ctxtMem (Summary.find bb !summary)) in *)
+  let tooltip : Dot.Attr.t = ToolTip ("") in
+
   let node : Dot.Node_Stmt.t = {id=bb.bb_name; attr_list=[ style; color;label; shape; tooltip]} in
   node
 
@@ -41,11 +43,11 @@ let rec cfg_to_dot (cfg : Cfg.t) (bb : Basicblock.t) visit =
 
 let func_to_dot (f : Function.t) : Dot.DIGraph.t = 
 
-  let _ = Bbpool.iter (fun k _ -> Format.printf "fname : %s\n" k) !Bbpool.pool in
+  (* let _ = Bbpool.iter (fun k _ -> Format.printf "fname : %s\n" k) !Bbpool.pool in *)
   let oc = open_out (f.function_name^".dot") in
-  let _ = Format.printf "find : %s\n" (f.function_name^"#entry") in
-  let _, stmts = cfg_to_dot f.cfg (Bbpool.find (f.function_name^"#entry") !Bbpool.pool) [] in
-  let _ = Format.printf "test\n\n" in
+  (* let _ = Format.printf "find : %s\n" (f.function_name^"#entry") in *)
+  let _, stmts = cfg_to_dot f.cfg (Bbpool.find_bb (f.function_name^"#entry")) [] in
+  (* let _ = Format.printf "test\n\n@." in *)
   let g : Dot.DIGraph.t = {id=f.function_name; stmt_list=stmts;} in
   let _ = Format.fprintf (Format.formatter_of_out_channel oc) "%a" Dot.DIGraph.pp g in
   let _  = close_out oc in
