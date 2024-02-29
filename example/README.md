@@ -1,5 +1,26 @@
 # Getting Started
 
+## Initialization
+
+The Init module facilitates the conversion of input LLVM bitcode into Calli 
+Intermediate Representation (IR) recognized by the Calli analyzer. 
+Moreover, Loop Unrolling can be applied to LLVM bitcode through LLVM Pass as input.
+Users have the flexibility to employ various transformation features provided by 
+Calli, such as 'call instruction transformation,' 'prune node insertion,' 'select 
+node insertion,' 'exit node insertion,' and more, according to their specific 
+requirements.
+
+```
+let _ = 
+  let _ = Init.init () in 
+  let _ = Init.loop_unroll 3 () in
+  let _ = Init.transform_call () in
+  let _ = Init.transform_select () in
+  let _ = Init.transform_prune () in
+  let _ = Init.make_llm () in
+  let _ = Init.make_call_graph () in ()
+```
+
 ## User Definition
 
 1) Abstract Value
@@ -7,20 +28,31 @@
 The abstract value in CaLLi represents the abstraction of values within a program. CaLLi provides infterface for abstract value module.
 
 ```
-module type S = 
-sig
-  type elt type t
-  val bot : t
-  val top : t
-  val (<=) : t -> t -> bool
-  val join : t -> t -> t 
-  val meet : t -> t -> t
-  val alpha : elt -> t 
-  val widen : t -> t -> t
-end
+module type S =
+  
+  sig
+    type elt
+    type t
+
+    val bot : t
+    val top : t
+    val (<=) : t -> t -> bool
+    val join : t -> t -> t
+    val meet : t -> t -> t
+    val widen : t -> t -> t
+
+    val alpha : elt -> string -> t
+
+    val binop : Op.t -> t -> t -> string -> t
+    val compop : Cond.t -> t -> t -> string -> t
+
+    val pp : Format.formatter -> t -> unit
+
+  end
 ```
 
-The abstract value includes the smallest value 'bot' and biggest value 'top'. 
+The abstract value includes the smallest value 'bot' and biggest value 'top'.
+The binary operation binop and comparison compop functions take an operator and two abstract values, and return an abstract value as the operation result.
 Additionally, functions for calculating partial order(⊑) between values, as well as join, meet and widen functions, need to be implemented.
 
 
@@ -77,17 +109,9 @@ For example, the following code represents the transfer function for BinaryOpera
 | BinaryOp {name; op; operand0; operand1; _} ->
   let v1 = abs_eval operand0 mem in
   let v2 = abs_eval operand1 mem in
-  let res : AbsValue.t = 
-    (match op with
-    | Add -> AbsValue.BinOp.(v1 + v2)
-    | Sub -> AbsValue.BinOp.(v1 - v2)
-    | Mul -> AbsValue.BinOp.(v1 * v2)
-    | SDiv -> AbsValue.BinOp.(v1 / v2)
-    | _ -> AbsValue.top
-    )
-  in
-  let addr = (stmt.bb_name, stmt.index, 0) in
-  let _ = Env.env := Env.add name (Val.Addr addr) !Env.env in
+  let res : AbsValue1.t = AbsValue1.binop op v1 v2 name in
+  let addr = stmt.bb_name^(string_of_int stmt.index)^(string_of_int 0) in
+  let _ = Env.env := Env.add name addr !Env.env in
   AbsMemory.update addr res mem
 ```
 
@@ -98,56 +122,39 @@ Utilizing the provided Functor in Calli, it is essential to generate the absmemo
 and states modules crucial for the creation of the analyzer.
 
 ```
-module MyAbsMemory = AbstractMemory.Make(AbsValue)
+module MyAbsMemory = AbstractMemory.Make(MyAbsValue)
 module MyStates = States.Make (MyContext) (MyAbsMemory)
+module Analyzer = WtoAnalyzer.Make (MyAbsValue) (MyAbsMemory) (MyContext) (MyStates) (MyTF)
 ```
 
 Finally, users can create an analyzer by using the Functor of the CalliAnalyzer module.
 
 ```
-module Analyzer = LlvmAnalyzer.Make (MyAbsValue) (MyAbsMemory) (MyContext) (MyStates) (MyTF)
+module Analyzer1 = WlAnalyzer.Make (MyAbsValue) (MyAbsMemory) (MyContext) (MyStates) (MyTF)
+module Analyzer2 = WtoAnalyzer.Make (MyAbsValue) (MyAbsMemory) (MyContext) (MyStates) (MyTF)
+
 ```
 
 
 ## Performing Analysis
 
-The Transform module facilitates the conversion of input LLVM bitcode into Calli 
-Intermediate Representation (IR) recognized by the Calli analyzer. Additionally, 
-users have the flexibility to employ various transformation features provided by 
-Calli, such as 'call instruction transformation,' 'prune node insertion,' 'select 
-node insertion,' 'exit node insertion,' and more, according to their specific 
-requirements.
-
-```
-let m : Module.t = 
-  let llctx = Llvm.create_context () in
-  let llmem = Llvm.MemoryBuffer.of_file Sys.argv.(1) in
-  let llm = Llvm_bitreader.parse_bitcode llctx llmem in
-  let calli_module1 = Transform.transform_module llm in  
-  let calli_module2 = Transform2.transform_call calli_module1 in  
-  let calli_module3 = Transform_select.transform_select calli_module12 in    
-  let calli_module4 = Transform3.add_prune_node calli_module13 in    
-  calli_module4
-```
-
 The user can perform analysis using the analyzer created through the Functor. 
 Initially, the analyzer is initialized with the AST transformed into Calli IR.
-
-```
-  let _ = Analyzer.init m
-```
-
 Set the starting basicblock for analysis and configure the initial the abstract memory.
 
-
 ```
-let entry = Bbpool.find (function_name^"#"^"entry") !Bbpool.pool in
-let init_mem = AbsMemory.empty in
-let init_states = MyStates.update (entry, MyContext.empty ()) init_mem MyStates.empty in
+  let init_mem = Analyzer.init (Init.m ())  in 
+  let main = Module.main (Init.llmodule ()) in
+  let entry = Bbpool.find (main.function_name^"#"^"entry") !Bbpool.pool in
+  let init_states = States.update (entry, MyContext.empty ()) init_mem States.empty in
+  
 ```
 
+User can set the loop count to be utilized in the iteration algorithm.
 Ultimately, analysis can be performed through the analyze module of the analyzer.
 
 ```
-let _ = Analyzer.analyze entry init_states
+let _ = Analyzer.LoopCounter.set_max_count 5 in
+let _ = Analyzer.analyze init_states in
+let res = !Analyzer.summary in
 ```

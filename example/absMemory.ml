@@ -1,3 +1,3 @@
 module F = Format
 
-include Calli.AbstractMemory.Make(AbsValue)
+include Calli.AbstractMemory.Make(AbsValue1)

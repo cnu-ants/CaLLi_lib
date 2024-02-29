@@ -1,7 +1,6 @@
 (include_subdirs unqualified)
  
 (executable
-  (name example)
-  (modules example init absMemory absValue)
-  (libraries calli))
-
+  (name test_wto_octagon)
+  (libraries calli apron apron.octMPQ)
+  (flags (:standard -w -26-40-27-33)))
