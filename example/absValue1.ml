@@ -78,14 +78,14 @@ let binop (op : Calli.Op.t) n1 n2 s =
   | _ -> AbsBot
 
     
-let compop (op : Calli.Cond.t) n1 n2 str = 
+let compop (op : Calli.Cond.t) n1 n2 s = 
   match n1, n2 with
   | AbsInt v1, AbsInt v2 -> 
     (match op with
-    | Eq -> AbsInt (AbsInt.Op.(v1 == v2))
-    | Ne -> AbsInt (AbsInt.Op.(v1 != v2))
-    | Sgt -> AbsInt (AbsInt.Op.(v1 < v2))
-    | Sge -> AbsInt (AbsInt.Op.(v1 <= v2))
+    | Eq -> AbsInt (AbsInt.Op.(v1 == v2) s)
+    | Ne -> AbsInt (AbsInt.Op.(v1 != v2) s)
+    | Sgt -> AbsInt (AbsInt.Op.(v1 < v2) s)
+    | Sge -> AbsInt (AbsInt.Op.(v1 <= v2) s)
     | _ -> AbsBot
     )
   | AbsBot, _ | _, AbsBot -> AbsBot

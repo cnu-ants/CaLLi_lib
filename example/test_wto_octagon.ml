@@ -4,7 +4,7 @@ open Calli
 
 let _ = 
   let _ = Init.init () in 
-  let _ = Init.loop_unroll () in
+  let _ = Init.loop_unroll 3 in
   let _ = Init.transform_call () in
   let _ = Init.transform_select () in
   let _ = Init.transform_prune () in

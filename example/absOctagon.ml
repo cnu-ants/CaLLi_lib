@@ -10,6 +10,7 @@ type elt = Z.t
 (* Oct.t Apron.Abstract1.t *)
   let man = Oct.manager_alloc ();;
   let index = ref 0
+
   let new_var () = 
     let _ = index := !index + 1 in 
     Var.of_string ("x"^(string_of_int !index))
@@ -30,16 +31,8 @@ type elt = Z.t
     {var=var; abs=abs; env=env}
 
   let (<=) v1 v2 = 
-
     let abs_v1 = Abstract1.bound_variable man v1.abs v1.var in
     let abs_v2 = Abstract1.bound_variable man v2.abs v2.var in
-    let _ = Calli.Pp.printf ~color:Blue "%a " Interval.print abs_v1 in
-    let _ = Calli.Pp.printf ~color:Blue "<= " in
-    let _ = Calli.Pp.printf ~color:Blue "%a %b \n@." Interval.print abs_v2 (Interval.is_leq abs_v1 abs_v2) in
-    (* let abs = Abstract1.unify man v1.abs v2.abs in *)
-    (* let env = Abstract1.env abs in *)
-    (* let abs_v1 = Abstract1.change_environment man v1.abs env true in *)
-    (* let abs_v2 = Abstract1.change_environment man v2.abs env true in *)
     Interval.is_leq abs_v1 abs_v2
 
   let join v1 v2 = 
@@ -71,7 +64,6 @@ type elt = Z.t
     (* Format.printf "var : %a, abs : %a@." Var.print v.var Abstract1.print v.abs *)
 
   let widen v1 v2 = 
-    let _ = Calli.Pp.printf ~color:Blue "Widen\n@." in
     let abs = Abstract1.unify man v1.abs v2.abs in
     let env = Abstract1.env abs in
     let abs_v1 = Abstract1.change_environment man v1.abs env false in
@@ -97,17 +89,8 @@ type elt = Z.t
           Environment.add env [|var|] [||] 
       in
       let abs = Abstract1.change_environment man abs env false in
-      (* let abs = Abstract1.bottom man env in *)
       let abs = Abstract1.assign_texpr man abs var texpr None in
       let res = {var=var; abs = abs; env=env} in 
-      let _ = Calli.Pp.printf ~color:Red "%a -> %a\n@." 
-        Var.print v1.var Interval.print (Abstract1.bound_variable man abs v1.var) in
-      let _ = Calli.Pp.printf ~color:Red "%a -> %a\n@." 
-        Var.print v2.var Interval.print (Abstract1.bound_variable man abs v2.var) in
-      let _ = Calli.Pp.printf ~color:Red "%a -> %a\n@." 
-        Var.print var Interval.print (Abstract1.bound_variable man abs var) in
-      (* let _ = Calli.Pp.printf ~color:Red "%a -> %a\n@." 
-        Var.print var Abstract1.print abs in *)
       res
 
     let (+) v1 v2 s = 
@@ -126,12 +109,25 @@ type elt = Z.t
       f v1 v2 Texpr1.Mod s
 
 
-    let (==) n1 n2 = n1
+    let (==) v1 v2 s =
+      if Abstract1.is_eq man v1.abs v2.abs
+        then alpha (Z.of_int 1) s
+      else alpha (Z.of_int 0) s 
         
-    let (!=) n1 n2 = n1
+    let (!=) v1 v2 s = 
+      if Abstract1.is_eq man v1.abs v2.abs
+        then alpha (Z.of_int 0) s
+      else alpha (Z.of_int 1) s 
 
-    let (<) n1 n2 = n1
+    let (<=) v1 v2 s = 
+      if Abstract1.is_leq man v1.abs v2.abs
+        then alpha (Z.of_int 1) s
+      else alpha (Z.of_int 0) s 
 
-    let (<=) n1 n2 = n1
+    let (<) v1 v2 s = 
+      if Abstract1.is_leq man v2.abs v1.abs
+        then alpha (Z.of_int 0) s
+      else alpha (Z.of_int 1) s 
+
 
   end
