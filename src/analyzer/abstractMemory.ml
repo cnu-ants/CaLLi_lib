@@ -62,8 +62,8 @@ module Make(AbsVal : AbstractDomain.S) : (S with type valty = AbsVal.t) =
       match mem with
       | Mem mem ->
         (try M.find x mem
-        with _ -> AbsVal.bot "")
-      | MemBot -> AbsVal.bot ""
+        with _ -> AbsVal.bot)
+      | MemBot -> AbsVal.bot
 
     let rec update x (v: AbsVal.t) mem = 
       match mem with 

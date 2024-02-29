@@ -4,8 +4,8 @@ module type S =
     type elt
     type t
 
-    val bot : string -> t
-    val top : string -> t
+    val bot : t
+    val top : t
     val (<=) : t -> t -> bool
     val join : t -> t -> t
     val meet : t -> t -> t

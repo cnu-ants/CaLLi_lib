@@ -33,8 +33,8 @@ let init () =
   (* ast3, ast3.function_map, CallGraph.make_call_graph ast3 *)
 
 
-let loop_unroll () =
-  let unroll = Opt.loop_unroll 3 Sys.argv.(1) in
+let loop_unroll i =
+  let unroll = Opt.loop_unroll i Sys.argv.(1) in
   let llmem = Llvm.MemoryBuffer.of_file unroll in
   let llmod = Llvm_bitreader.parse_bitcode llctx llmem in
   let ast = Transform.transform_module llmod in  
