@@ -22,7 +22,7 @@ let rec transform_call_stmt (stmt_list : Stmt.t list) : st list =
     (match hd.inst with
     | Call {name; ty; callee; args; _;} ->
       let callsite = Term.CallSite {bb_name=hd.bb_name; callee=callee; args=args} in
-      let returnsite : Stmt.t = {bb_name=hd.bb_name; index=hd.index; inst=Inst.ReturnSite {name=name; ty=ty}} in
+      let returnsite : Stmt.t = {bb_name=hd.bb_name; index=hd.index; inst=Inst.ReturnSite {name=name; ty=ty}; loc=hd.loc} in
       [T callsite; S returnsite]@(transform_call_stmt tl)
     | _ -> [S hd]@(transform_call_stmt tl)
     )

@@ -149,7 +149,6 @@ module Make
     let main = Module.main !llmodule in
     let entry = Bbpool.find (main.function_name^"#"^"entry") !Bbpool.pool in
     let wto = WTO.wto_scc !icfg entry in 
-    let _ = Format.printf "%a\n" WTO.pp wto in
     analyze_partition wto states
 
 

@@ -15,12 +15,12 @@ let transform_cfg (cfg : Cfg.t) : Cfg.t =
         let br_term : Term.t = CondBr {bb_name=bb_name; cond=cond; 
                               succ0=(Name {ty=Label; name=bb_name1}); 
                               succ1=(Name {ty=Label; name=bb_name2});} in
-        let load : Stmt.t = {bb_name=bb_name3; index=(-1); 
+        let load : Stmt.t = {bb_name=bb_name3; index=(-1); loc=stmt.loc;
                         inst=(Load {name=name; operand=Name {ty=ty; name=bb_name^name}; ty=ty})} in
-        let store1 : Stmt.t = {bb_name=bb_name1; index=0; 
+        let store1 : Stmt.t = {bb_name=bb_name1; index=0; loc=stmt.loc;
                           inst=(Store {operand=operand0; name=bb_name^name; ty=(Pointer {ty=ty})})
                           } in 
-        let store2 : Stmt.t = {bb_name=bb_name2; index=0; 
+        let store2 : Stmt.t = {bb_name=bb_name2; index=0; loc=stmt.loc;
                           inst=(Store {operand=operand1; name=bb_name^name; ty=(Pointer {ty=ty})})
                           } in 
         let new_bb1 : Basicblock.t = 

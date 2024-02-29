@@ -159,7 +159,7 @@ let rec transform_args instr func_name num_args : Expr.t list =
   [(transform_e (Llvm.operand instr num_args) func_name)]
 
 
-let transform_instr instr func_name: Inst.t list =
+let transform_instr instr func_name: Inst.t=
   let op = Llvm.instr_opcode instr in 
   match op with
   (* | Llvm.Opcode.FNeg  *)
@@ -180,73 +180,73 @@ let transform_instr instr func_name: Inst.t list =
   | Llvm.Opcode.AShr
   | Llvm.Opcode.And
   | Llvm.Opcode.Or
-  | Llvm.Opcode.Xor     -> [Inst.BinaryOp 
+  | Llvm.Opcode.Xor     -> Inst.BinaryOp 
                         {name=func_name^(get_name instr); 
                         op=(transform_binop op); 
                         operand0=(transform_e (Llvm.operand instr 0) func_name); 
                         operand1=(transform_e (Llvm.operand instr 1) func_name);
-                        ty=transform_expr_type (Llvm.operand instr 1)}]
+                        ty=transform_expr_type (Llvm.operand instr 1)}
   | Llvm.Opcode.Alloca  ->
-                        [Inst.Alloc 
+                        Inst.Alloc 
                         {name=func_name^(get_name instr);
-                        ty=transform_expr_type instr}]
+                        ty=transform_expr_type instr}
   | Llvm.Opcode.Store   ->
                         let n = 
                           if Util.is_global (get_name (Llvm.operand instr 1)) 
                           then (get_name (Llvm.operand instr 1))
                           else func_name^(get_name (Llvm.operand instr 1)) 
                         in
-                        [Inst.Store 
+                        Inst.Store 
                         {operand=(transform_e (Llvm.operand instr 0) func_name); 
                         name=n;
-                        ty = transform_expr_type (Llvm.operand instr 1)}]
-  | Llvm.Opcode.Load    -> [Inst.Load 
+                        ty = transform_expr_type (Llvm.operand instr 1)}
+  | Llvm.Opcode.Load    -> Inst.Load 
                         {name=(func_name^(get_name instr)); 
                         operand=(transform_e (Llvm.operand instr 0) func_name);
-                        ty = transform_expr_type instr}]
-  | Llvm.Opcode.ICmp    -> [Inst.ICmp 
+                        ty = transform_expr_type instr}
+  | Llvm.Opcode.ICmp    -> Inst.ICmp 
                         {name=(func_name^(get_name instr)); 
                         cond=(transform_cond instr);
                         operand0=(transform_e (Llvm.operand instr 0) func_name); 
                         operand1=(transform_e (Llvm.operand instr 1) func_name);
-                        ty=transform_expr_type instr}]
-  | Llvm.Opcode.Select  -> [Inst.Select 
+                        ty=transform_expr_type instr}
+  | Llvm.Opcode.Select  -> Inst.Select 
                         {name=(func_name^(get_name instr));
                         cond=(transform_e (Llvm.operand instr 0) func_name); 
                         operand0=(transform_e (Llvm.operand instr 1) func_name); 
                         operand1=(transform_e (Llvm.operand instr 2) func_name);
-                        ty=transform_expr_type (Llvm.operand instr 1)}]
+                        ty=transform_expr_type (Llvm.operand instr 1)}
   | Llvm.Opcode.Call -> let args = if (Llvm.num_operands instr) = 1 then [] 
                           else (transform_args instr func_name ((Llvm.num_operands instr) -2)) in
-                        [Inst.Call
+                        Inst.Call
                         {name=(func_name^(get_name instr));
                         callee=(get_fname (Llvm.operand instr ((Llvm.num_operands instr) -1)));
                         args=args;
-                        ty=transform_expr_type instr}]
+                        ty=transform_expr_type instr}
   | Llvm.Opcode.GetElementPtr -> 
                         let num_index = Llvm.num_operands instr in
                         let index_list = 
                           if num_index = 1 then []
                           else List.init (num_index - 1) (fun i -> transform_e (Llvm.operand instr (i+1)) func_name)
                         in
-                        [Inst.GetElementPtr
+                        Inst.GetElementPtr
                         {name=(func_name^(get_name instr));
                         ty=transform_expr_type instr;
                         operand=(transform_e (Llvm.operand instr 0) func_name);
-                        index=index_list}]
-  | Llvm.Opcode.BitCast -> [Inst.BitCast
+                        index=index_list}
+  | Llvm.Opcode.BitCast -> Inst.BitCast
                         {name=(func_name^(get_name instr));
                         operand=(transform_e (Llvm.operand instr 0) func_name);
-                        ty=transform_expr_type instr;}]
-  | Llvm.Opcode.ZExt -> [Inst.Zext
+                        ty=transform_expr_type instr;}
+  | Llvm.Opcode.ZExt -> Inst.Zext
                         {name=(func_name^(get_name instr));
                         operand=(transform_e (Llvm.operand instr 0) func_name);
-                        ty=transform_expr_type instr;}]
-  | Llvm.Opcode.SExt -> [Inst.Sext
+                        ty=transform_expr_type instr;}
+  | Llvm.Opcode.SExt -> Inst.Sext
                         {name=(func_name^(get_name instr));
                         operand=(transform_e (Llvm.operand instr 0) func_name);
-                        ty=transform_expr_type instr;}]
-  | _ -> [Inst.Other]
+                        ty=transform_expr_type instr;}
+  | _ -> Inst.Other
 
 
 
@@ -271,6 +271,24 @@ let transform_term term func_name bb_name: Term.t =
     }
   | _ -> Term.Other
 
+let get_location instr : Stmt.Loc.t option = 
+  let loc = 
+    Array.fold_left
+    (fun loc (_, md) -> 
+      let mdkind = Llvm_debuginfo.get_metadata_kind md in
+      match mdkind with
+      | DILocationMetadataKind -> 
+        let line = (Llvm_debuginfo.di_location_get_line ~location:md) in
+        let col = (Llvm_debuginfo.di_location_get_column ~location:md) in
+        Some (line, col)
+      | _ -> loc
+    )
+    None
+    (Llvm.global_copy_all_metadata instr)
+  in
+  match loc with
+  | None -> None
+  | Some (line, col) -> Some {line=line; col=col;}
 
 let transform_bb llbb func_name : Basicblock.t =
   let bb_name = func_name^"#"^(get_bbname (Llvm.value_of_block llbb)) in
@@ -281,16 +299,13 @@ let transform_bb llbb func_name : Basicblock.t =
       | Llvm.Opcode.Br
       | Llvm.Opcode.Ret 
       | Llvm.Opcode.Switch -> (stmt_list, index)
-      | _ ->  let inst_list = (transform_instr lli func_name) in
-        let stmts=
-          List.init (List.length inst_list)
-          (fun index' -> 
-            let stmt : Stmt.t = 
-              {bb_name=bb_name; index=index+index'; inst=List.nth inst_list index';} in 
-            stmt
-          )
-          in
-          (stmt_list@stmts, index+(List.length inst_list))
+      | _ ->  
+        let inst = (transform_instr lli func_name) in
+        let loc = get_location lli in
+        let stmt : Stmt.t = 
+          {bb_name=bb_name; index=index; inst=inst; loc=loc} 
+        in
+        (stmt_list@[stmt], index+1)
     )
     ([], 0)
     llbb

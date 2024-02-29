@@ -14,9 +14,9 @@ let add_prune_node (f : Function.t) =
           let true_value : Expr.t = ConstInt {ty=Expr.get_type cond; value=Z.of_int 1} in
           let false_value : Expr.t = ConstInt {ty=Expr.get_type cond; value=Z.of_int 0} in 
           let true_stmt : Stmt.t = 
-            {bb_name=bb.bb_name^"#prune_true"; index=0; inst=Prune{cond=cond_name; value=true_value}} in
+            {bb_name=bb.bb_name^"#prune_true"; index=0; inst=Prune{cond=cond_name; value=true_value}; loc=None} in
           let false_stmt : Stmt.t =
-            {bb_name=bb.bb_name^"#prune_false"; index=0; inst=Prune {cond=cond_name; value=false_value}} in
+            {bb_name=bb.bb_name^"#prune_false"; index=0; inst=Prune {cond=cond_name; value=false_value}; loc=None} in
           let true_prune_bb : Basicblock.t = 
             {func_name=bb.func_name; bb_name=true_stmt.bb_name; stmts=[true_stmt]; term=Br{bb_name=true_stmt.bb_name; succ=succ0}; loc=""} in
           let false_prune_bb : Basicblock.t = 
@@ -37,10 +37,13 @@ let add_prune_node (f : Function.t) =
         let stmt_list : Stmt.t list = 
           List.map
           (fun (v: Expr.t) -> 
-            let stmt : Stmt.t = {bb_name=bb_name^"#prune_"^(Format.asprintf "%a" Expr.pp v); index=0; inst=Prune {cond=cond_name; value=v}} in stmt)
+            let stmt : Stmt.t = 
+            {bb_name=bb_name^"#prune_"^(Format.asprintf "%a" Expr.pp v); index=0; 
+            inst=Prune {cond=cond_name; value=v}; loc=None} in stmt)
           v_list
         in
-        let default_stmt : Stmt.t = {bb_name=bb_name^"#prune_default"; index=0; inst=NPrune {cond=cond_name; value=v_list}} in
+        let default_stmt : Stmt.t = {bb_name=bb_name^"#prune_default"; index=0; 
+        inst=NPrune {cond=cond_name; value=v_list}; loc=None} in
         let prune_bb_list : Basicblock.t list = 
           List.map2
           (fun (bb' : Expr.t) (stmt : Stmt.t) -> 

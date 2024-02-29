@@ -4,5 +4,6 @@
   (name calli)
   (public_name calli)
   (modules :standard \)
-  (libraries str llvm llvm.bitreader containers zarith))
+  (libraries str llvm llvm.bitreader llvm.all_backends 
+  llvm.debuginfo llvm.target llvm.passmgr_builder containers zarith))
 
