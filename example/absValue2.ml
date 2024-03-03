@@ -6,8 +6,8 @@ module AbsInt = AbsInterval
 type elt = IntLiteral of Z.t | AddrLiteral of AbsAddr.elt
 type t = | AbsTop | AbsAddr of  AbsAddr.t | AbsInt of AbsInt.t | AbsBot
 
-let bot str = AbsBot
-let top str = AbsTop
+let bot = AbsBot
+let top = AbsTop
 
 let pp fmt v = 
 match v with
@@ -66,6 +66,12 @@ let join v1 v2 =
       | Sub -> AbsInt (AbsInt.BinOp.(v1 - v2))
       | Mul -> AbsInt (AbsInt.BinOp.(v1 * v2))
       | SDiv -> AbsInt (AbsInt.BinOp.(v1 / v2))
+      | SRem -> AbsInt (AbsInt.BinOp.(v1 % v2))
+      | Shl -> AbsInt (AbsInt.BinOp.(v1 >> v2))
+      | LShr -> AbsInt (AbsInt.BinOp.(v1 << v2))
+      | And -> AbsInt (AbsInt.BinOp.(v1 & v2))
+      | Or -> AbsInt (AbsInt.BinOp.(v1 or v2))
+      | Xor -> AbsInt (AbsInt.BinOp.xor v1 v2)
       | _ -> AbsBot
       )
     | AbsBot, _ | _, AbsBot -> AbsBot
@@ -81,6 +87,8 @@ let join v1 v2 =
       | Ne -> AbsInt (AbsInt.CompOp.(v1 != v2))
       | Sgt -> AbsInt (AbsInt.CompOp.(v1 < v2))
       | Sge -> AbsInt (AbsInt.CompOp.(v1 <= v2))
+      | Slt -> AbsInt (AbsInt.CompOp.(v2 < v1))
+      | Sle -> AbsInt (AbsInt.CompOp.(v2 <= v1))
       | _ -> AbsBot
       )
     | AbsBot, _ | _, AbsBot -> AbsBot
